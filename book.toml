@@ -1,5 +1,5 @@
 [book]
-authors = [Alin Eduard Iacoban]
+authors = ["Alin Eduard Iacoban"]
 language = "en"
 multilingual = false
 src = "src"
