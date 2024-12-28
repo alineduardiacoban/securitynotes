@@ -1,20 +1,18 @@
 # Cross-Site Request Forgery (CSRF)
 
 ## CONTENTS
-1. [Prerequisites](#1-prerequisites)
-2. [CSRF - Continued](#2-csrf---continued)
-3. [Impact of CSRF Vulnerabilities](#3-impact-of-csrf-vulnerabilities)
-4. [Common Types of CSRF Vulnerabilities](#4-common-types-of-csrf-vulnerabilities)
-   - [GET-Based CSRF](#41-get-based-csrf)
-   - [POST-Based CSRF](#42-post-based-csrf)
-5. [Prevention of CSRF Vulnerabilities](#5-prevention-of-csrf-vulnerabilities)
-6. [References](#6-references)
+1. [What is CSRF](#1-csrf---continued)
+2. [Impact of CSRF Vulnerabilities](#2-impact-of-csrf-vulnerabilities)
+3. [Common Types of CSRF Vulnerabilities](#3-common-types-of-csrf-vulnerabilities)
+   - [GET-Based CSRF](#31-get-based-csrf)
+   - [POST-Based CSRF](#32-post-based-csrf)
+4. [Prevention of CSRF Vulnerabilities](#4-prevention-of-csrf-vulnerabilities)
+5. [References](#5-references)
 
 ---
 
-## 1. Prerequisites
+## 1. What is CSRF?
 
-### What is CSRF?
 CSRF (Cross-Site Request Forgery) occurs when an attacker tricks a user into performing unintended actions on a web application where the user is authenticated. This often exploits session-based authentication mechanisms (e.g., cookies).
 
 **Key Conditions for CSRF**:
@@ -22,9 +20,6 @@ CSRF (Cross-Site Request Forgery) occurs when an attacker tricks a user into per
 2. **Cookie-Based Session Handling**: The application relies on session cookies for authentication.
 3. **No Unpredictable Request Parameters**: The request parameters can be guessed or forged by the attacker.
 
----
-
-## 2. CSRF - Continued
 
 In a CSRF attack:
 1. A user authenticates with a web application (e.g., bank.com) and receives a session cookie.
@@ -39,7 +34,7 @@ In a CSRF attack:
 
 ---
 
-## 3. Impact of CSRF Vulnerabilities
+## 2. Impact of CSRF Vulnerabilities
 
 The impact of a CSRF attack depends on the functionality exploited:
 
@@ -52,9 +47,9 @@ The impact of a CSRF attack depends on the functionality exploited:
 
 ---
 
-## 4. Common Types of CSRF Vulnerabilities
+## 3. Common Types of CSRF Vulnerabilities
 
-### 4.1. GET-Based CSRF
+### 3.1. GET-Based CSRF
 
 **Theory**  
 GET-based CSRF exploits actions triggered by HTTP GET requests, where sensitive operations are performed without validation.
@@ -74,7 +69,7 @@ GET-based CSRF exploits actions triggered by HTTP GET requests, where sensitive 
    ```html
    <img src="https://bank.com/email/change?email=attacker@gmail.com" width="0" height="0">
 
-### 4.2. POST-Based CSRF
+### 3.2. POST-Based CSRF
 
 **Theory**  
 POST-based CSRF exploits actions performed using HTTP POST requests, often hidden within forms.
@@ -99,7 +94,7 @@ POST-based CSRF exploits actions performed using HTTP POST requests, often hidde
 
 ---
 
-## 5. Prevention of CSRF Vulnerabilities
+## 4. Prevention of CSRF Vulnerabilities
 
 ### Primary Defense: CSRF Tokens
 
@@ -139,7 +134,7 @@ Set-Cookie: session=test; SameSite=Strict
 
 ---
 
-## 6. References
+## 5. References
 
 - [PortSwigger Web Security Academy](https://portswigger.net/web-security/csrf)  
 - [OWASP – CSRF](https://owasp.org/www-community/attacks/csrf)  

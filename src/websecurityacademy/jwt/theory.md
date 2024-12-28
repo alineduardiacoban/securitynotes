@@ -1,34 +1,28 @@
 # JSON Web Token (JWT) Attacks
 
 ## CONTENTS
-1. [Prerequisites](#1-prerequisites)
-2. [JWT - Continued](#2-jwt---continued)
-3. [Impact of JWT Vulnerabilities](#3-impact-of-jwt-vulnerabilities)
-4. [Common Types of JWT Vulnerabilities](#4-common-types-of-jwt-vulnerabilities)
-   - [Sensitive Information in JWT](#41-sensitive-information-in-jwt)
-   - [JWT Stored in Insecure Location](#42-jwt-stored-in-insecure-location)
-   - [JWT Transmitted Over Insecure Connection](#43-jwt-transmitted-over-insecure-connection)
-   - [Expired JWTs Are Accepted](#44-expired-jwts-are-accepted)
-   - [None Algorithm Accepted](#45-none-algorithm-accepted)
-   - [Weak Signing Key](#46-weak-signing-key)
-   - [Header Injection via jwk Parameter](#47-header-injection-via-jwk-parameter)
-   - [Algorithm Confusion Attack](#48-algorithm-confusion-attack)
-5. [Prevention of JWT Vulnerabilities](#5-prevention-of-jwt-vulnerabilities)
-6. [References](#6-references)
+1. [What is JWT?](#1-jwt---continued)
+2. [Impact of JWT Vulnerabilities](#2-impact-of-jwt-vulnerabilities)
+3. [Common Types of JWT Vulnerabilities](#3-common-types-of-jwt-vulnerabilities)
+   - [Sensitive Information in JWT](#31-sensitive-information-in-jwt)
+   - [JWT Stored in Insecure Location](#32-jwt-stored-in-insecure-location)
+   - [JWT Transmitted Over Insecure Connection](#33-jwt-transmitted-over-insecure-connection)
+   - [Expired JWTs Are Accepted](#34-expired-jwts-are-accepted)
+   - [None Algorithm Accepted](#35-none-algorithm-accepted)
+   - [Weak Signing Key](#36-weak-signing-key)
+   - [Header Injection via jwk Parameter](#37-header-injection-via-jwk-parameter)
+   - [Algorithm Confusion Attack](#38-algorithm-confusion-attack)
+4. [Prevention of JWT Vulnerabilities](#4-prevention-of-jwt-vulnerabilities)
+5. [References](#5-references)
 
 ---
 
-## 1. Prerequisites
+## 2. What is JWT?
 
-### What is a JWT?
 JSON Web Tokens (JWTs) are a compact and standardized format for transmitting cryptographically signed JSON data between parties. A JWT consists of three parts:
 1. **Header**: Metadata about the token (e.g., algorithm, type).
 2. **Payload**: Claims or data being transmitted (e.g., user roles, expiration time).
 3. **Signature**: A cryptographic signature verifying the token's authenticity.
-
----
-
-## 2. JWT - Continued
 
 A JWT is encoded as a Base64URL string: `header.payload.signature`
 
@@ -59,7 +53,7 @@ A JWT is encoded as a Base64URL string: `header.payload.signature`
 **Theory**  
 Sensitive information (e.g., passwords, credit card numbers) is improperly included in the payload of JWTs.
 
-**Steps to Find**
+**Steps to Find and Exploit**
 1. Intercept a request in Burp Suite.
 2. Decode the JWT payload and inspect its claims for sensitive data.
 
@@ -70,7 +64,7 @@ Sensitive information (e.g., passwords, credit card numbers) is improperly inclu
 **Theory**  
 JWTs stored in local storage or cookies without proper flags (e.g., `HttpOnly`, `Secure`) can be accessed by malicious scripts.
 
-**Steps to Find**
+**Steps to Find and Exploit**
 1. Open the browser’s **Application** tab.
 2. Inspect **Cookies** or **Local Storage** for JWT tokens.
 3. Run: `console.log(localStorage); console.log(document.cookie);`
@@ -82,7 +76,7 @@ JWTs stored in local storage or cookies without proper flags (e.g., `HttpOnly`, 
 **Theory**  
 JWTs transmitted over HTTP (instead of HTTPS) are vulnerable to interception.
 
-**Steps to Find**
+**Steps to Find and Exploit**
 1. Use tools like Burp Suite to inspect traffic.
 2. Look for JWTs transmitted via unencrypted HTTP connections.
 
@@ -93,7 +87,7 @@ JWTs transmitted over HTTP (instead of HTTPS) are vulnerable to interception.
 **Theory**  
 The application fails to enforce the `exp` claim, accepting tokens past their expiration time.
 
-**Steps to Find**
+**Steps to Find and Exploit**
 1. Intercept a request and decode the JWT to find the `exp` claim.
 2. Replay the expired token to check if it is still accepted.
 
@@ -104,7 +98,7 @@ The application fails to enforce the `exp` claim, accepting tokens past their ex
 **Theory**  
 The application improperly accepts JWTs signed with the `none` algorithm, bypassing signature verification.
 
-**Steps to Exploit**
+**Steps to Find and Exploit**
 1. Intercept a request and decode the JWT header.
 2. Change the `alg` field to `none` and remove the signature.
 3. Replay the token to test acceptance.
@@ -116,7 +110,7 @@ The application improperly accepts JWTs signed with the `none` algorithm, bypass
 **Theory**  
 The application uses a weak or brute-forceable signing key.
 
-**Steps to Exploit**
+**Steps to Find and Exploit**
 1. Use `hashcat` to brute-force the secret:
 
 `hashcat -a 0 -m 16500 <YOUR-JWT> <path-to-wordlist>`
@@ -128,7 +122,7 @@ The application uses a weak or brute-forceable signing key.
 **Theory**  
 The application improperly trusts embedded JWK (JSON Web Key) in the header.
 
-**Steps to Exploit**
+**Steps to Find and Exploit**
 1. Generate a malicious JWK.
 2. Inject it into the `jwk` parameter in the JWT header.
 
@@ -139,7 +133,7 @@ The application improperly trusts embedded JWK (JSON Web Key) in the header.
 **Theory**  
 The server is tricked into verifying JWTs using a different algorithm than intended (e.g., asymmetric vs. symmetric).
 
-**Steps to Exploit**
+**Steps to Find and Exploit**
 1. Change the `alg` parameter in the JWT header.
 2. Forge a valid token using an unintended algorithm.
 

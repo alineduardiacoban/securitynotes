@@ -98,7 +98,6 @@ Authentication endpoints lacking rate-limiting or lockout mechanisms are vulnera
 1. Submit multiple failed login attempts and observe behavior:
    - Does the account lock after repeated failures?
    - Are CAPTCHAs or delays introduced after successive failures?
-
 2. Check whether other authentication-related endpoints, such as password reset pages, have similar protections.
 
 **Steps to Exploit**
