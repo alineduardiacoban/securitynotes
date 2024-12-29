@@ -1,165 +1,142 @@
 # Cross-Site Scripting (XSS)
 
-## CONTENTS
-1. [Prerequisites](#1-prerequisites)
-2. [What is XSS?](#2-what-is-xss)
-3. [Impact of XSS Vulnerabilities](#3-impact-of-xss-vulnerabilities)
-4. [Common Types of XSS Vulnerabilities](#4-common-types-of-xss-vulnerabilities)
-   - [Reflected XSS](#41-reflected-xss)
-   - [Stored XSS](#42-stored-xss)
-   - [DOM-Based XSS](#43-dom-based-xss)
-5. [Prevention of XSS Vulnerabilities](#5-prevention-of-xss-vulnerabilities)
-6. [References](#6-references)
+## Table Of Contents
+- [What Are XSS Vulnerabilities](#what-are-xss-vulnerabilities)
+- [How to Find And Exploit XSS Vulnerabilities](#how-to-find-and-exploit-xss-vulnerabilities)
+- [How to Prevent XSS Vulnerabilities](#how-to-prevent-xss-vulnerabilities)
 
 ---
 
-## 1. Prerequisites
+## What Are XSS Vulnerabilities?
 
-1. **Same-Origin Policy (SOP)**: A browser security rule that restricts resource sharing between origins. 
-2. **Sink**: A location in the DOM where data is rendered (e.g., innerHTML).
-
----
-
-## 2. What is XSS?
-
-Cross-Site Scripting (XSS) is a web security vulnerability that allows attackers to inject malicious scripts into a web application. These scripts execute in the victim's browser, often leveraging their session and access permissions.
-
-XSS occurs when:
-1. An attacker injects a malicious script into a vulnerable application.
-2. The injected script is executed in the browser of an unsuspecting user.
-3. The script gains access to sensitive data, impersonates the user, or defaces the website.
-
-### Example Scenario
-A status message application reflects user input in its response:
-
-**URL**:  
-`https://example.com/status?message=Hello`
-
-**Vulnerable Response**:  
-`<p>Status: Hello</p>`
-
-**Exploit**:  
-`https://example.com/status?message=<script>alert(document.cookie);</script>`
-
-**Exploit Response**:  
-`<p>Status: <script>alert(document.cookie);</script></p>`
+Cross-Site Scripting (XSS) vulnerabilities allow an attacker to inject malicious client-side scripts into the application, which are then executed in the victim user's web browser.
 
 ---
 
-## 3. Impact of XSS Vulnerabilities
+### Types of XSS
 
-1. **Confidentiality**:
-   - Stealing cookies, session tokens, or sensitive data.
-2. **Integrity**:
-   - Injecting malicious content or modifying application functionality.
-3. **Availability**:
-   - Disrupting the application's usability (e.g., infinite alert loops).
-
-### Potential Use Cases for XSS Exploits:
-- Masquerading as a victim user to perform unauthorized actions.
-- Capturing user credentials via phishing forms.
-- Injecting trojan functionality into a website.
-
----
-
-## 4. Common Types of XSS Vulnerabilities
-
-### 4.1. Reflected XSS
-
-**Theory**  
-Reflected XSS occurs when the application reflects user input directly in the response without validation or sanitization.
-
-**Why This Happens**:
-- Input is reflected in dynamic content, such as query strings or form submissions, without proper encoding or validation.
-
-**Steps to Find**
-1. Identify endpoints reflecting user input in the response.
-2. Test reflection contexts (e.g., HTML, JavaScript, attributes).
-3. Inject test strings to determine payload execution.
-
-**Steps to Exploit**
-1. Craft a malicious payload:
-   - Example:
-     `<script>alert(1);</script>`
-2. Send the payload in a query parameter:
-   - Example:
-     `https://example.com/search?q=<script>alert(1);</script>`
-3. Observe script execution in the browser.
-
----
-
-### 4.2. Stored XSS
-
-**Theory**  
-Stored XSS occurs when user input is saved on the server and reflected in later responses, making it more persistent and dangerous.
-
-**Why This Happens**:
-- Applications save user input (e.g., comments, profiles) without sanitization or validation.
-
-**Steps to Find**
-1. Submit a unique test string in fields that store user input (e.g., comment sections).
-2. Inspect application responses for reflections of the stored data.
-3. Test multiple contexts where data is rendered (e.g., web pages, email templates).
-
-**Steps to Exploit**
-1. Inject a malicious payload into a comment or form field:
-   - Example:
-     `<script>alert(document.cookie);</script>`
-2. Wait for the payload to execute when another user views the stored data.
-
----
-
-### 4.3. DOM-Based XSS
-
-**Theory**  
-DOM-Based XSS arises when client-side JavaScript processes user input and injects it into the DOM without validation.
-
-**Why This Happens**:
-- Insecure JavaScript functions (e.g., `innerHTML`, `document.write`) process unvalidated data from sources like query strings or user inputs.
-
-**Steps to Find**
-1. Trace user input in the DOM using browser developer tools.
-2. Identify unsafe sinks (e.g., `document.write`, `innerHTML`).
-3. Test execution by injecting payloads:
-   - Example:
-     `<img src=x onerror=alert(1)>`
-
-**Steps to Exploit**
-1. Inject a payload into a vulnerable input source.
-2. Confirm execution in the DOM by observing changes or alerts.
-
----
-
-## 5. Prevention of XSS Vulnerabilities
-
-### General Measures
-1. **Input Validation**:
-   - Accept only expected data formats (e.g., numbers for age fields).
-2. **Output Encoding**:
-   - Use context-aware encoding (e.g., HTML, JavaScript).
-   - Escape characters like `<`, `>`, `&`, and quotes.
-
-### Specific Mitigations
 1. **Reflected XSS**:
-   - Encode all user-supplied input in HTTP responses.
-2. **Stored XSS**:
-   - Validate and sanitize stored input before rendering it.
-3. **DOM-Based XSS**:
-   - Avoid using insecure DOM manipulation methods like `innerHTML`.
+   - Arises when the application directly reflects client-supplied input in the response of the request in an unsafe way.
 
-### Additional Protections
-1. **Content Security Policy (CSP)**:
-   - Example:
-     `Content-Security-Policy: script-src 'self'; object-src 'none';`
-2. **Secure HTTP Headers**:
-   - Add headers to restrict browser behavior:
-     - `X-Content-Type-Options: nosniff`
-     - `X-XSS-Protection: 1; mode=block`
+2. **Stored XSS**:
+   - Arises when the application stores client-supplied input in an unsafe way and includes it in later responses.
+
+3. **DOM-Based XSS**:
+   - Arises when JavaScript takes data from client-supplied input and passes it to a sink that supports dynamic code execution in the DOM.
 
 ---
 
-## 6. References
+### What Can XSS Be Used For?
 
-- [PortSwigger Web Security Academy – XSS](https://portswigger.net/web-security/cross-site-scripting)  
-- [OWASP XSS Cheat Sheet](https://owasp.org/www-community/attacks/xss)  
-- [XSS Filter Evasion Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/XSS_Filter_Evasion_Cheat_Sheet.html)  
+- **Impersonate** or masquerade as the victim user.
+- Perform any action the user can perform.
+- **Read data** that the user can access.
+- **Inject trojan functionality** into the website to capture login credentials.
+- Perform **virtual defacement** of the website.
+
+---
+
+### Impact of XSS Vulnerabilities
+
+- **Confidentiality**: None / Partial (Low) / High
+- **Integrity**: None / Partial (Low) / High
+- **Availability**: None / Partial (Low) / High
+- **Chaining**: Can be combined with other vulnerabilities for account takeover or remote code execution.
+
+---
+
+## How to Find And Exploit XSS Vulnerabilities
+
+### Finding & Exploiting Reflected XSS
+
+1. Identify endpoints where data is reflected.
+   - Includes URL query strings, message bodies, file paths, and HTTP headers.
+2. Submit a unique, arbitrary string (e.g., `test12564`) and monitor responses for reflections.
+3. Determine the reflection context and test candidate payloads.
+
+#### Example 1: A Tag Attribute Value
+
+```html
+<input type="text" name="address1" value="test12564">
+```
+
+#### Sample Payloads:
+
+```html
+<input type="text" name="address1" value="test12564"><script>alert(1)</script>">
+<input type="text" name="address1" value="test12564" onfocus="alert(1)">
+```
+
+#### Example 2: A JavaScript String
+
+```html
+<script>var a = 'test12564'; var b = 123; ... </script>
+```
+
+#### Sample Payload:
+
+```html
+<script>var a = 'test12564'; alert(1); var foo=''; var b = 123; ... </script>
+```
+#### Example 3: An Attribute Containing a URL
+
+```html
+<a href="test12564">Click here ..</a>
+```
+
+#### Sample Payload:
+
+```html
+<a href="javascript:alert(1);">Click here ..</a>
+<a href="#" onclick="javascript:alert(1)">Click here ..</a>
+```
+## Finding & Exploiting Stored XSS
+
+1. **Identify endpoints** where user input is stored and later reflected.
+2. **Submit a unique string** (e.g., `test12564`) and review the application for its appearance.
+3. **Determine the context** of the reflected input and test payloads.
+
+---
+
+## Finding & Exploiting DOM-Based XSS
+
+1. **Review client-side JavaScript** for sinks such as:
+   - `document.write()`
+   - `element.innerHTML`
+   - `element.outerHTML`
+   - `element.insertAdjacentHTML`
+2. Use developer tools to **trace execution paths** and supply payloads.
+
+---
+
+## How to Prevent XSS Vulnerabilities
+
+### Encode User-Controllable Data
+
+- Apply combinations of HTML, URL, JavaScript, and CSS encoding based on the context.
+- Use libraries like **Guava (Java)** for secure encoding.
+
+### Filter Input
+
+- Accept only expected or valid input.
+  - **Example**: Age fields should only accept numeric values.
+
+### Use Appropriate Response Headers
+
+- Prevent XSS in HTTP responses with `Content-Type` and `X-Content-Type-Options` headers.
+
+### Use Content Security Policy (CSP)
+
+**Example**:
+```http
+Content-Security-Policy: default-src 'none'; script-src 'self'; connect-src 'self'; img-src 'self'; style-src 'self'; frame-ancestors 'self'; form-action 'self';
+```
+
+## Resources
+
+- [Web Security Academy - Cross-site Scripting (XSS)](https://portswigger.net/web-security/cross-site-scripting)
+- [OWASP - Cross-site Scripting (XSS)](https://owasp.org/www-community/attacks/xss)
+- [OWASP Cross Site Scripting Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+- [Cross-site Scripting (XSS) Cheat Sheet](https://portswigger.net/web-security/cross-site-scripting/cheat-sheet)
+- [OWASP XSS Filter Evasion Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/XSS_Filter_Evasion_Cheat_Sheet.html)
+- [OWASP Content Security Policy Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html)
