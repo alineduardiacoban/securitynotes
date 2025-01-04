@@ -29,3 +29,21 @@
 # SSRF
 
 - [Theory](websecurityacademy/ssrf/theory.md) 
+
+# Clickjacking
+
+- [Theory](websecurityacademy/clickjacking/theory.md) 
+
+# Web Socket Vulnerabilities
+
+- [Theory](websecurityacademy/web_socket_vulnerabilities/theory.md)
+
+# XXE
+- [Theory](websecurityacademy/xxe/theory.md)
+
+# CORS
+- [Theory](websecurityacademy/cors/theory.md)
+
+# Command Injection
+- [Theory](websecurityacademy/command_injection/theory.md)
+

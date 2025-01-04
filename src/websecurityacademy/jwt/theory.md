@@ -1,119 +1,257 @@
 # JSON Web Tokens (JWT)
-
-## Table Of Contents
-
-- [What are JWTs](#what-are-jwts)
-- [What Are JWT Vulnerabilities](#what-are-jwt-vulnerabilities)
-- [How To Find And Exploit JWT Vulnerabilities](#how-to-find-and-exploit-jwt-vulnerabilities)
-- [How To Secure JWTs](#how-to-secure-jwts)
-
 ---
 
 ## What Are JWTs?
 
 JSON Web Tokens (JWTs) are a standardized format for sending cryptographically signed JSON data between systems.
 
-### Components of a JWT
-1. **Header**  
-   Contains metadata such as:
-   - `alg` (signature algorithm, e.g., HS256, RS256)
-   - `typ` (token type)
-   - Optional fields: `kid`, `jwk`, `jku`
+### JWT Components
+#### Header  
+The first component is the header which contains metadata.
+* alg — Signature algorithm.
+   * Symmetric key algorithms such as HS256.
+   * Asymmetric key algorithms such as RS256.
+   * No signature such as the “none” algorithm.
+* typ — Token type.
+* kid — Key ID for identifying the key used.
+* jwk — Embedded JSON object representing the key.
+* jku — URL to retrieve key information.
 
-2. **Payload**  
-   Contains claims such as:
-   - `iss` (issuer)
-   - `sub` (subject)
-   - `aud` (audience)
-   - `exp` (expiration timestamp)
-   - `iat` (issued at timestamp)
-   - Other custom claims (e.g., `role`, `email`)
+#### Payload
+The second component is the payload which contains a set of
+claims.
+* iss — Identifies the issuer of the JWT.
+* sub — Identifies the subject of the JWT.
+* aud — Identifies the audience that the JWT is intended for.
+* exp — A timestamp (in UNIX time format) indicating when the JWT
+expires and should no longer be accepted.
+* iat — A timestamp indicating when the JWT was issued.
+* Claims such as name, role, email, etc.
 
-3. **Signature**  
-   Verifies the integrity of the token:
-   - **Symmetric algorithms**: Use a single key for signing and verification.
-   - **Asymmetric algorithms**: Use a private key for signing and a public key for verification.
+#### Signature
+The third component is the signature which contains the signature
+of the token.
+* Symmetric Algorithm
+   * The server uses a single key to both sign and verify the token.
+* Asymmetric Algorithm
+   * This consists of a private key, which the server uses to sign the token, and a public key that can be used to verify the signature.
 
----
-
-## What Are JWT Vulnerabilities?
-
-### Common Causes of JWT Vulnerabilities:
-- Weak or misconfigured cryptographic algorithms.
-- Poor key management.
-- Issues with token expiration and revocation.
-- Signature bypasses.
-- Information leakage.
-
-### Examples of Vulnerabilities:
-1. JWT contains sensitive information.
-2. JWT is stored insecurely (e.g., in LocalStorage or cookies without proper flags).
-3. JWT transmitted over an insecure connection (e.g., HTTP).
-4. Long or missing expiration times.
-5. Expired JWTs are still accepted.
-6. Weak or brute-forceable signing keys.
-7. Header injection vulnerabilities via `jwk`, `jku`, or `kid`.
-8. Algorithm confusion attacks.
+### What Causes JWT Vulnerabilities?
+* Weak or misconfigured cryptographic algorithms.
+* Poor key management.
+* Token expiration & revocation issues.
+* Signature bypasses.
+* Information leakage.
 
 ---
 
-## How to Find and Exploit JWT Vulnerabilities
+## How to Find And Exploit JWT Vulnerabilities?
 
-### Example Vulnerabilities and Exploitation Steps:
+### JWT Vulnerabilities
+* JWT contains sensitive information.
+* JWT is stored in an insecure location.
+* JWT is transmitted over an insecureconnection.
+* JWT expiration time is too lengthy or missing.
+* Expired JWT is accepted.
+* JWT signature is not verified, or arbitrary signatures are accepted.
+* “None” algorithm is accepted / JWT without a signature are accepted.
+* JWT is signed with a weak or brute-forceable key.
+* JWT is vulnerable to header injection via the jwk parameter.
+* JWT is vulnerable to header injection via jku parameter.
+* kid parameter is vulnerable to injection attacks.
+* Algorithm confusion attack.
 
-#### Sensitive Information in JWT
-1. Intercept the request in Burp.
-2. Under the **JSON Web Token** subtab, review the decoded payload.
-3. Identify any sensitive information, such as passwords or personal data.
 
-#### JWT Stored in Insecure Location
-1. Open the browser's Developer Tools.
-2. Inspect **LocalStorage** or **Cookies** for stored JWTs.
-3. Check if cookies are missing `HttpOnly` and `Secure` flags.
+### JWT Contains Sensitive Information
+* JWT tokens stored in LocalStorage or in a cookie that is not configured securely.
+* Insecurely Configured Cookie (Missing HttpOnly and Secure Flags)
+`Set-Cookie: session=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; Path=/; Domain=example.com;`
+* JWT Stored in Local Storage
 
-#### Long or Missing Expiration Time
-1. Decode the JWT payload and look for the `exp` claim.
-2. If the expiration is too far in the future or missing, test access to expired tokens.
+***Steps to find and exploit:***
+1) In the browser, right click and select Inspect and select the Application tab.
+2) There you can see the Cookies jar and Local storage.
+3) In the Console tab, run localStorage or document.cookie.
 
-#### Signature Bypass
-1. Modify the JWT signature using Burp Repeater.
-2. Test if the server accepts the modified signature without validation.
+### JWT Transmitted Over Insecure Connection
+* JWT tokens transmitted over an unencrypted channel (such as HTTP instead of HTTPS).
 
-#### None Algorithm
-1. Change the `alg` field in the JWT header to `none`.
-2. Remove the signature and replay the token to test if the server accepts it.
+### Long JWT Expiration Time
+* JWT token does not expire or has a very long expiration time.
+```xml
+{
+"sub": "user123",
+"name": "Alice Smith",
+"email": "alice.smith@example.com",
+"role": "admin",
+"exp": 1821869841 // Example expiration timestamp (September 25, 2027)
+}
+```
+***Steps to find and exploit:***
+1) Intercept the request in Burp.
+2) Under the Request tab, click on the JSON Web Token subtab.
+3) Review the decoded payload to identify the expiration time set in the “exp” parameter.
+4) Confirm the expiration time.
 
-#### Weak Signing Keys
-1. Extract the JWT and use a tool like `hashcat` to brute force the signing key:
+### Expired JWTs are Accepted
+The application accepts expired JWTs.
+```xml
+{
+"sub": "user123",
+"name": "Alice Smith",
+"email": "alice.smith@example.com",
+"role": "admin",
+"exp": 1726790400 // Example expiration timestamp (September 20, 2025)
+}
+```
+***Steps to find and exploit:***
+1) Intercept the request in Burp.
+2) Under the Request tab, click on the JSON Web Token subtab.
+3) Review the decoded payload to identify the expiration time set in the “exp” parameter.
+4) Replay the token to access an authenticated page.
 
-`hashcat -a 0 -m 16500 <YOUR-JWT> /path/to/jwt.secrets.list`
+### JWT Signature Not Verified
+The application does not verify the signature of the JWT / accepts arbitrary signatures. This is sometimes
+possible because developers confuse the verify() and decode() methods and only pass incoming tokens
+to the decode function.
 
+```csharp
+{
+app.use((req, res, next) => {
+const token = req.headers['authorization']?.split(' ')[1];
+if (token) {
+// Decode the token without verifying
+const decoded = jwt.decode(token);
+...
+```
+
+***Steps to find and exploit:***
+1) Intercept an authenticated request in
+Burp.
+2) 3) Send the request to Repeater.
+In Repeater, change the signature to
+an arbitrary value.
+4) Click on Send.
+
+### None Algorithm Accepted
+The application accepts a token with the “none” algorithm and does not properly verify the algorithm specified in the JWT header.
+***Steps to find and exploit:***
+1) Intercept an authenticated request in
+Burp.
+2) Send the request to Repeater.
+3) In Repeater, change the algorithm field to “none” in the JSON Web Token subtab.
+4) Go back to the Pretty subtab and remove the signature of the token.
+5) Click on Send.
+
+### Weak / Brute-forceable Signing Key
+The application uses a weak, predictable, or easily guessable signing key, that can be easily brute-forced.
+
+***Steps to find and exploit:***
+
+**Part 1**: Brute force the secret key
+1) Intercept an authenticated request in Burp.
+2) Extract the token and use hashcat to brute force the key.
+hashcat -a 0 -m 16500 <YOUR-JWT> /path/to/jwt.secrets.list
+
+**Part 2**: Generate a forged signing key
+1) Use Burp Decoder to base64 encode the secret that was brute-forced.
+2) Visit the JWT Editor tab and click on New
+Symmetric Key. Click Generate.
+3) Replace the generated value for the k property with the base64-encoded secret.
+4) Click OK to save the key.
+
+**Part 3**: Modify and sign the JWT
+1) Go back to the request and alter the token.
+2) At the bottom of the tab, click Sign and select the key that was generated.
+3) Click OK.
+4) Click on Send.
+
+### Header Injection via the jwk Parameter
+The application trusts any key that is embedded in the jwk header.
+***Steps to find and exploit:***
+1) Go to the JWT Editor tab.
+2) Click New RSA Key.
+3) Click Generate and then click OK to save the key.
+4) Intercept an authenticated request and send it to Repeater.
+5) In Repeater, alter the token and then click on the Attack button.
+6) Select Embedded JWK. When prompted, select your newly
+generated RSA key and click OK.
+7) Send the request.
+
+### Header Injection via the jku Parameter
+The application trusts any key that is embedded in the jku (JWK Set URL) header.
+
+***Steps to find and exploit:***
+
+**Part 1** – Generate & Upload a malicious JWK
+Set
+1) Generate a key pair in the JWT Editor tab
+and store it in the attacker controlled
+server.
+
+**Part 2** - Modify and sign the JWT
+1) Intercept an authenticated request in Burp
+and send it to Repeater.
+2) Add a new jku parameter to the header of the JWT. Set its value to the URL of your JWK Set on the attacker server.
+3) Click Sign, and select the generated RSA
+key.
+4) Send the request.
+---
+
+### Header Injection via the kid Parameter
+The kid header parameter is vulnerable to injection attacks.
+
+***Steps to find and exploit:***
+
+**Part 1** - Generate a suitable signing key
+1) Go to the JWT Editor tab.
+2) Click New Symmetric Key and click Generate to generate a new key in JWK.
+3) Replace the k property with a Base64-encoded null byte (AA==).
+4) Click OK.
+**Part 2** – Modify and sign the token
+1) Intercept an authenticated request in Burp and send it to Repeater.
+2) Change the kid parameter to `../../../../../../../dev/null`.
+3) Click on Sign and send the request.
+
+### Algorithm Confusion Attack
+Algorithm confusion attacks (also known as key confusion attacks) occur when the attacker is able to force the server to verify the signature of the JWT using a different algorithm than is intended by the application developers.
+
+**Part 1** - Obtain the server's public key
+1) Obtain the server’s public key
+**Part 2** - Generate a malicious signing key
+1) Generate an RSA key pair in the JWT
+Editor tab.
+**Part 3** – Modify and sign the token
+1) Intercept an authenticated request in Burp and send it to Repeater.
+2) Change the value of the alg parameter to HS256.
+3) Click on Sign and send the request.
 
 ---
 
 ## How to Secure JWTs
 
-### Best Practices:
-1. **Avoid storing sensitive information** in the JWT payload.
-2. **Use robust libraries** to handle JWTs securely.
-3. **Verify signatures** thoroughly, ensuring proper methods are used.
-4. **Store JWTs securely**:
-- Use `SessionStorage` for Authorization headers.
-- Use cookies with `HttpOnly` and `Secure` flags if applicable.
-5. **Transmit JWTs securely**:
-- Use HTTPS.
-- Avoid sending JWTs in URL parameters.
-6. **Opt for strong signing algorithms**:
-- Prefer `RS256` or `ES256` over weaker algorithms like `HS256`.
-7. **Enforce expiration dates**:
-- Use short-lived tokens with refresh mechanisms.
-- Ensure the `exp` claim is set for all tokens.
-8. **Implement key management**:
-- Rotate keys regularly.
-- Securely store signing keys.
-9. **Restrict claims** to follow the principle of least privilege.
-10. **Prevent header injection attacks**:
- - Whitelist permitted public keys and hosts for `jwk` and `jku` headers.
+* Avoid storing sensitive information in the JWT.
+* Use an up-to-date library for handling JWTs.
+* Perform robust signature verification on JWTs.
+* Store JWTs securely. If you’re using an Authorization header to transmit JWTs then opt
+for Session Storage instead of Local Storage. Similarly, if you’re using cookies to store
+JWTs, then ensure the Secure and HTTPOnly flags are set.
+* Transmit JWTs securely. Do not send tokens in URL parameters.
+* Opt for stronger signing algorithms when possible. For example, RS256 or ES256 are
+stronger than HS256 with a weak secret key.
+* Always transmit JWTs over a secure encrypted channel (HTTPS) to protect against
+eavesdropping.
+* Use the principle of least privilege when setting claims in the token. Users should only
+be given access to what is required / necessary.
+* Implement proper key management practices, including regular key rotation and ensure
+secret keys are stored securely.
+* Enforce a strict whitelist of permitted public keys and hosts for the jwk and jku headers.
+* Include the aud (audience) claim to specify the intended recipient of the token. This
+prevents it from being used on different websites.
+* Ensure that the kid header parameter is not vulnerable to injection attacks such as path
+traversal or SQL injection.
+* Always set the expiration date (exp claim) for tokens to limit their validity to the shortest period of time acceptable by the business. Use short-lived tokens and refresh tokens when possible.
+* If possible, enable the issuing server to revoke tokens.
 
 ---
 
