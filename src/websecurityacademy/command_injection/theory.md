@@ -28,13 +28,6 @@ Line #6 allows execution of arbitrary commands via client-side input
     * **A**vailability - can be used to delete content in the application
 * Remote code execution on the host operating system
 
-### Impact of Command Injection Attacks
-* Unauthorized access to the application and host operating system.
-    * **C**onfidentiality – Command injection can be used to view sensitive information.
-    * **I**ntegrity – Command injection can be used to alter content in the application.
-    * **A**vailability – Command injection can be used to delete content in the application.
-* Remote code execution on the operating system
-
 ---
 
 ## How To Find Command Injection?
