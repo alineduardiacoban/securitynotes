@@ -15,6 +15,7 @@
 - [CORS - Theory](websecurityacademy/cors/theory.md)
 - [Command Injection - Theory](websecurityacademy/command_injection/theory.md)
 - [Insecure Deserialization - Theory](websecurityacademy/insecure_deserialization/theory.md)
+- [HTTP Request Smuggling - Theory](websecurityacademy/http_request_smuggling/theory.md)
 
 # Damn Vulnerable Web Application
 
